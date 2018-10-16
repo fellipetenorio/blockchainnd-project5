@@ -21,7 +21,7 @@ contract('StarNotary', accounts => {
             await this.contract.createStar('awesome star!', 'dec1', 'mag1', 'cent1', 'story1', 1, {from: accounts[0]})
             console.log('first created');
             // try to save the same
-            await expectThrow(this.contract.createStar('awesome star!', 'dec2', 'mag1', 'cent1', 'story1', 2, {from: accounts[0]}))
+            await expectThrow(this.contract.createStar('awesome star!', 'dec1', 'mag1', 'cent1', 'story1', 2, {from: accounts[0]}))
         })
     })
 
