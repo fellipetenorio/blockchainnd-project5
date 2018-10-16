@@ -9,9 +9,19 @@ contract('StarNotary', accounts => {
     describe('can create a star', () => { 
         it('can create a star and get its name', async function () { 
             
-            await this.contract.createStar('awesome star!', 1, {from: accounts[0]})
+            await this.contract.createStar('awesome star!', 'dec1', 'mag1', 'cent1', 'story1', 1, {from: accounts[0]})
+            
+            assert.equal((await this.contract.tokenIdToStarInfo(1))[0], 'awesome star!')
+        })
+    })
 
-            assert.equal(await this.contract.tokenIdToStarInfo(1), 'awesome star!')
+    describe('can\'t create equal star', () => { 
+        it('can\'t create the same star twice', async function () { 
+            // new star
+            await this.contract.createStar('awesome star!', 'dec1', 'mag1', 'cent1', 'story1', 1, {from: accounts[0]})
+            console.log('first created');
+            // try to save the same
+            await expectThrow(this.contract.createStar('awesome star!', 'dec2', 'mag1', 'cent1', 'story1', 2, {from: accounts[0]}))
         })
     })
 
@@ -24,7 +34,7 @@ contract('StarNotary', accounts => {
         let starPrice = web3.toWei(.01, "ether")
 
         beforeEach(async function () { 
-            await this.contract.createStar('awesome star!', starId, {from: user1})    
+            await this.contract.createStar('awesome star!', 'dec1', 'mag1', 'cent1', 'story1', starId, {from: user1})    
         })
 
         it('user1 can put up their star for sale', async function () { 
@@ -55,3 +65,14 @@ contract('StarNotary', accounts => {
         })
     })
 })
+
+var expectThrow = async function(promise) { 
+    try { 
+        await promise
+    } catch (error) {
+        assert.exists(error)
+        return
+    }
+    console.log('no error')
+    assert.fail('Expected an error but didnt see one!')
+}
