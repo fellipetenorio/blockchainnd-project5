@@ -12,6 +12,25 @@ contract StarNotary is ERC721 {
         string story;
     }
 
+    /*
+    createStar()
+putStarUpForSale()
+buyStar()
+checkIfStarExist()
+Utilizing star coordinates, this function will check if the coordinates have already been claimed. The return type is boolean.
+mint()
+approve()
+safeTransferFrom()
+SetApprovalForAll()
+getApproved()
+isApprovedForAll()
+ownerOf()
+starsForSale()
+tokenIdToStarInfo()
+Expected response:
+["Star power 103!", "I love my wonderful star", "ra_032.155", "dec_121.874", "mag_245.978"]
+     */
+
     // create inverse map
     mapping(string => uint256) internal starToToken;
     mapping(uint256 => Star) public tokenIdToStarInfo; 
