@@ -25,6 +25,14 @@ contract('StarNotary', accounts => {
         })
     })
 
+    describe('Verify if star exists', () => {
+        it('Star1 exists', async function(){
+            // new star
+            await this.contract.createStar('awesome star!', 'dec1', 'mag1', 'cent1', 'story1', 1, {from: accounts[0]})
+            assert.noequal((await this.contract.starToToken('dec1mag1cent1')>0), true)
+        })
+    })
+
     describe('buying and selling stars', () => { 
         let user1 = accounts[1]
         let user2 = accounts[2]

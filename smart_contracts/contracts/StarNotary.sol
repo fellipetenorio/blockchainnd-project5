@@ -13,22 +13,22 @@ contract StarNotary is ERC721 {
     }
 
     /*
-    createStar()
-putStarUpForSale()
-buyStar()
-checkIfStarExist()
-Utilizing star coordinates, this function will check if the coordinates have already been claimed. The return type is boolean.
-mint()
-approve()
-safeTransferFrom()
-SetApprovalForAll()
-getApproved()
-isApprovedForAll()
-ownerOf()
-starsForSale()
-tokenIdToStarInfo()
-Expected response:
-["Star power 103!", "I love my wonderful star", "ra_032.155", "dec_121.874", "mag_245.978"]
+    createStar() - OK
+    putStarUpForSale() - OK
+    buyStar() - OK
+    checkIfStarExist() - OK
+        Utilizing star coordinates, this function will check if the coordinates have already been claimed. The return type is boolean.
+    mint()
+    approve()
+    safeTransferFrom()
+    SetApprovalForAll()
+    getApproved()
+    isApprovedForAll()
+    ownerOf()
+    starsForSale()
+    tokenIdToStarInfo()
+    Expected response:
+    ["Star power 103!", "I love my wonderful star", "ra_032.155", "dec_121.874", "mag_245.978"]
      */
 
     // create inverse map
@@ -79,6 +79,10 @@ Expected response:
         if(msg.value > starCost) { 
             msg.sender.transfer(msg.value - starCost);
         }
+    }
+
+    function checkIfStarExist(string _dec, string _mag, string _cent) public returns (bool) {
+        return starToToken[createStarId(_dec, _mag, _cent)] > 0;
     }
 
     function createStarId(string _dec, string _mag, string _cent) public returns (string){
