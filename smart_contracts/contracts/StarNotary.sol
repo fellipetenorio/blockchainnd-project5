@@ -15,18 +15,18 @@ contract StarNotary is ERC721 {
     /*
     createStar() - OK
     putStarUpForSale() - OK
-    buyStar() - OK
+    buyStar() - OK   
     checkIfStarExist() - OK
         Utilizing star coordinates, this function will check if the coordinates have already been claimed. The return type is boolean.
-    mint()
+    mint() - OK
     approve()
     safeTransferFrom()
     SetApprovalForAll()
     getApproved()
     isApprovedForAll()
-    ownerOf()
-    starsForSale()
-    tokenIdToStarInfo()
+    ownerOf() - ok
+    starsForSale() - ok
+    tokenIdToStarInfo() - ok
     Expected response:
     ["Star power 103!", "I love my wonderful star", "ra_032.155", "dec_121.874", "mag_245.978"]
      */
@@ -38,6 +38,15 @@ contract StarNotary is ERC721 {
 
     event log(string log);
     event logint(uint256 log);
+
+    function mint(uint256 _tokenId) public { 
+        require(tokenToOwner[_tokenId] == address(0), "this token belongs to someone else already");
+
+        tokenToOwner[_tokenId] = msg.sender; 
+        ownerToBalance[msg.sender] += 1;
+
+        emit Transfer(address(0), msg.sender, _tokenId);
+    }
 
     modifier uniqueStar(string _dec, string _mag, string _cent) {
         string memory starId = createStarId(_dec, _mag, _cent);
