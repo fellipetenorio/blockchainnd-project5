@@ -15,7 +15,7 @@ contract StarNotary is ERC721 {
     /*
     createStar() - OK
     putStarUpForSale() - OK
-    buyStar() - OK   
+    buyStar()
     checkIfStarExist() - OK
         Utilizing star coordinates, this function will check if the coordinates have already been claimed. The return type is boolean.
     mint() - OK
@@ -35,6 +35,8 @@ contract StarNotary is ERC721 {
     mapping(string => uint256) internal starToToken;
     mapping(uint256 => Star) public tokenIdToStarInfo; 
     mapping(uint256 => uint256) public starsForSale;
+    mapping(uint256 => address) public tokenToOwner;
+    mapping(address => uint256) public ownerToBalance;
 
     event log(string log);
     event logint(uint256 log);
@@ -46,6 +48,15 @@ contract StarNotary is ERC721 {
         ownerToBalance[msg.sender] += 1;
 
         emit Transfer(address(0), msg.sender, _tokenId);
+    }
+
+    /// @notice Find the owner of an NFT
+    /// @dev NFTs assigned to zero address are considered invalid, and queries
+    ///  about them do throw.
+    /// @param _tokenId The identifier for an NFT
+    /// @return The address of the owner of the NFT
+    function ownerOf(uint256 _tokenId) public view returns (address) { 
+        return tokenToOwner[_tokenId];
     }
 
     modifier uniqueStar(string _dec, string _mag, string _cent) {
