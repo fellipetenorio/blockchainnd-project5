@@ -6,20 +6,23 @@ contract('StarNotary', accounts => {
         this.contract = await StarNotary.new({from: accounts[0]})
     })
     
-    describe('can create a star', () => { 
+    describe('can create a star', () => {
         it('can create a star and get its name', async function () { 
             
             await this.contract.createStar('awesome star!', 'dec1', 'mag1', 'cent1', 'story1', 1, {from: accounts[0]})
-            
             assert.equal((await this.contract.tokenIdToStarInfo(1))[0], 'awesome star!')
+        })
+
+        it('can get the star owner', async function () {
+            await this.contract.createStar('awesome star!', 'dec1', 'mag1', 'cent1', 'story1', 1, {from: accounts[0]})
+            assert.equal(await this.contract.ownerOf(1), accounts[0])
         })
     })
 
-    describe('can\'t create equal star', () => { 
+    describe('avoid duplicity', () => { 
         it('can\'t create the same star twice', async function () { 
             // new star
             await this.contract.createStar('awesome star!', 'dec1', 'mag1', 'cent1', 'story1', 1, {from: accounts[0]})
-            console.log('first created');
             // try to save the same
             await expectThrow(this.contract.createStar('awesome star!', 'dec1', 'mag1', 'cent1', 'story1', 2, {from: accounts[0]}))
         })
@@ -29,7 +32,7 @@ contract('StarNotary', accounts => {
         it('Star1 exists', async function(){
             // new star
             await this.contract.createStar('awesome star!', 'dec1', 'mag1', 'cent1', 'story1', 1, {from: accounts[0]})
-            assert.noequal((await this.contract.starToToken('dec1mag1cent1')>0), true)
+            assert.equal(await this.contract.checkIfStarExist('dec1','mag1','cent1'), true)
         })
     })
 
@@ -38,7 +41,7 @@ contract('StarNotary', accounts => {
         let user2 = accounts[2]
         let randomMaliciousUser = accounts[3]
         
-        let starId = 1
+        let starId = 99
         let starPrice = web3.toWei(.01, "ether")
 
         beforeEach(async function () { 
@@ -72,6 +75,30 @@ contract('StarNotary', accounts => {
             })
         })
     })
+
+    describe('aproving others', () => { 
+        let user1 = accounts[1]
+        let user2 = accounts[2]
+        let randomMaliciousUser = accounts[3]
+        let starId = 99
+
+        beforeEach(async function () { 
+            await this.contract.createStar('awesome star!', 'dec1', 'mag1', 'cent1', 'story1', starId, {from: user1})    
+        })
+
+        it('user 1 can approve user 2 for the star 1', async function (){
+            await this.contract.approve(user2, starId, {from: user1})
+            assert.equal(await this.contract.getApproved(starId), user2)
+        })
+
+        it('malicious user cant approve user2 for user1 star', async function () { 
+            await expectThrow(this.contract.approve(user2, starId, {from: randomMaliciousUser}))
+        })        
+
+        it('user1 cant approve user1 (it self)', async function () { 
+            await expectThrow(this.contract.approve(user1, starId, {from: user1}))
+        })        
+    })
 })
 
 var expectThrow = async function(promise) { 
@@ -81,6 +108,5 @@ var expectThrow = async function(promise) {
         assert.exists(error)
         return
     }
-    console.log('no error')
     assert.fail('Expected an error but didnt see one!')
 }

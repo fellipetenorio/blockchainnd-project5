@@ -1,5 +1,6 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.4.2;
 
+//import "https://github.com/OpenZeppelin/openzeppelin-solidity/contracts/token/ERC721/ERC721.sol";
 import 'openzeppelin-solidity/contracts/token/ERC721/ERC721.sol';
 
 contract StarNotary is ERC721 { 
@@ -12,34 +13,19 @@ contract StarNotary is ERC721 {
         string story;
     }
 
-    /*
-    createStar() - OK
-    putStarUpForSale() - OK
-    buyStar()
-    checkIfStarExist() - OK
-        Utilizing star coordinates, this function will check if the coordinates have already been claimed. The return type is boolean.
-    mint() - OK
-    approve()
-    safeTransferFrom()
-    SetApprovalForAll()
-    getApproved()
-    isApprovedForAll()
-    ownerOf() - ok
-    starsForSale() - ok
-    tokenIdToStarInfo() - ok
-    Expected response:
-    ["Star power 103!", "I love my wonderful star", "ra_032.155", "dec_121.874", "mag_245.978"]
-     */
-
     // create inverse map
     mapping(string => uint256) internal starToToken;
     mapping(uint256 => Star) public tokenIdToStarInfo; 
     mapping(uint256 => uint256) public starsForSale;
     mapping(uint256 => address) public tokenToOwner;
+    mapping(uint256 => address) tokenToApproved;
     mapping(address => uint256) public ownerToBalance;
+    mapping(address => mapping(address => bool)) ownerToOperator;
 
     event log(string log);
     event logint(uint256 log);
+    event StarForSale(uint256 _token, uint256 price);
+    event owner(address owner);
 
     function mint(uint256 _tokenId) public { 
         require(tokenToOwner[_tokenId] == address(0), "this token belongs to someone else already");
@@ -50,19 +36,8 @@ contract StarNotary is ERC721 {
         emit Transfer(address(0), msg.sender, _tokenId);
     }
 
-    /// @notice Find the owner of an NFT
-    /// @dev NFTs assigned to zero address are considered invalid, and queries
-    ///  about them do throw.
-    /// @param _tokenId The identifier for an NFT
-    /// @return The address of the owner of the NFT
-    function ownerOf(uint256 _tokenId) public view returns (address) { 
-        return tokenToOwner[_tokenId];
-    }
-
     modifier uniqueStar(string _dec, string _mag, string _cent) {
         string memory starId = createStarId(_dec, _mag, _cent);
-        emit log(starId);
-        emit logint(starToToken[starId]);
         require(starToToken[starId] == 0, "Star already exists");
         _;
     }
@@ -74,14 +49,19 @@ contract StarNotary is ERC721 {
         // verify if this star already exists
         tokenIdToStarInfo[_tokenId] = newStar;
         starToToken[starId] = _tokenId;
+        mint(_tokenId);
+        emit owner(this.ownerOf(_tokenId));
+    }
 
-        _mint(msg.sender, _tokenId);
+    function ownerOf(uint256 _token) public view returns (address) {
+        return tokenToOwner[_token];
     }
 
     function putStarUpForSale(uint256 _tokenId, uint256 _price) public { 
         require(this.ownerOf(_tokenId) == msg.sender, "Only the owner can put Start for sale");
-
+        // if it's for sale already, update the price
         starsForSale[_tokenId] = _price;
+        emit StarForSale(_tokenId, _price);
     }
 
     function buyStar(uint256 _tokenId) public payable { 
@@ -89,10 +69,12 @@ contract StarNotary is ERC721 {
         
         uint256 starCost = starsForSale[_tokenId];
         address starOwner = this.ownerOf(_tokenId);
+        emit logint(msg.value);
         require(msg.value >= starCost, "Not enough balance to buy");
 
-        _removeTokenFrom(starOwner, _tokenId);
-        _addTokenTo(msg.sender, _tokenId);
+        ownerToBalance[starOwner] -= 1;
+        tokenToOwner[_tokenId] = msg.sender; 
+        ownerToBalance[msg.sender] += 1;
         
         starOwner.transfer(starCost);
 
@@ -101,14 +83,47 @@ contract StarNotary is ERC721 {
         }
     }
 
-    function checkIfStarExist(string _dec, string _mag, string _cent) public returns (bool) {
+    function checkIfStarExist(string _dec, string _mag, string _cent) public view returns (bool) {
         return starToToken[createStarId(_dec, _mag, _cent)] > 0;
     }
 
     function createStarId(string _dec, string _mag, string _cent) public returns (string){
         return strConcat(_dec, _mag, _cent);
     }
+    
+    function approve(address _approved, uint256 _tokenId) public { 
+        require(tokenToOwner[_tokenId] == msg.sender, "Only the owner can approve");
+        require(tokenToOwner[_tokenId] != _approved, "Can't approve your self");
 
+        tokenToApproved[_tokenId] = _approved;
+        emit Approval(msg.sender, _approved, _tokenId);
+    }
+    
+    function safeTransferFrom(address _from, address _to, uint256 _tokenId) public { 
+        require(_from == tokenToOwner[_tokenId] 
+        || getApproved(_tokenId) == _from 
+        || isApprovedForAll(tokenToOwner[_tokenId], _from), "Not allowed to transfer");
+        _addTokenTo(_to, _tokenId);
+    }
+    
+    function setApprovalForAll(address _operator, bool _approved) public { 
+        ownerToOperator[msg.sender][_operator] = _approved;
+
+        emit ApprovalForAll(msg.sender, _operator, _approved);
+    }
+    
+    function getApproved(uint256 _tokenId) public view returns (address) { 
+        return tokenToApproved[_tokenId];
+    }
+    
+    function isApprovedForAll(address _owner, address _operator) public view returns (bool) { 
+        return ownerToOperator[_owner][_operator];
+    }
+    
+    function starsForSale(uint256 _token) public view returns (uint256) {
+        return starsForSale[_token];
+    }
+    
     // concat strings
     // ref: https://ethereum.stackexchange.com/questions/729/how-to-concatenate-strings-in-solidity
     function strConcat(string _a, string _b, string _c, string _d, string _e) internal returns (string){
